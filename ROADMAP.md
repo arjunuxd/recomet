@@ -12,8 +12,8 @@ F-01/C-01 remediated with exact G1–G10 golden-vector tests; see [`PHASE4_ACCEP
 worst-case hard-limit performance unverified; 10 moderate development-only npm audit advisories
 tracked; JS proxy inspection not sandboxed; additive hybrid strategy may require exhaustive-switch
 updates). Hybrid personalization (`R23`) remains deferred unless separately approved. Phase 5
-advanced ranking/discovery is **implemented in this working tree (pending maintainer review/formal
-acceptance)**.
+advanced ranking/discovery is **formally accepted** by the maintainer (2026-11-13, subject to
+documented limitations and deferred features; see [`PHASE5_ACCEPTANCE.md`](./docs/development/phase-history/phase-5/PHASE5_ACCEPTANCE.md)).
 **Last updated:** 2026-11-13
 **Versioning:** Semantic Versioning from the first public release
 **License:** Apache License 2.0
@@ -64,8 +64,10 @@ documented limitations remain visible). Phase 3 collaborative filtering was auth
 collaborative-only scope revision and accepted by the maintainer on 2026-11-07 (see
 [`PHASE3_ACCEPTANCE.md`](./docs/development/phase-history/phase-3/PHASE3_ACCEPTANCE.md)). Phase 4 hybrid recommendation was authorized, implemented for the approved
 subset, and **formally accepted** by the maintainer on 2026-11-07 subject to documented limitations
-(see [`PHASE4_ACCEPTANCE.md`](./docs/development/phase-history/phase-4/PHASE4_ACCEPTANCE.md)). Phase 5 is the next planned phase (not started; separate
-authorization required).
+(see [`PHASE4_ACCEPTANCE.md`](./docs/development/phase-history/phase-4/PHASE4_ACCEPTANCE.md)). Phase 5 advanced ranking/discovery was
+implemented and **formally accepted** by the maintainer on 2026-11-13, subject to documented
+limitations (see [`PHASE5_ACCEPTANCE.md`](./docs/development/phase-history/phase-5/PHASE5_ACCEPTANCE.md)). Phase 6 is not started and requires
+separate authorization.
 **Objective:** Establish a coherent, privacy-preserving, implementable foundation before
 writing engine code.
 
@@ -454,9 +456,10 @@ development-only advisories tracked (no unauthorized upgrades). Accepted limitat
 documented (dedicated hybrid benchmark scenarios deferred; Safari/WebKit, OS-level network isolation,
 peak memory, and worst-case hard-limit performance unverified; JS proxy inspection not sandboxed;
 additive hybrid strategy may require exhaustive-switch TypeScript updates). Hybrid personalization
-(`R23`) remains deferred unless separately approved. Phase 5 is implemented in the working tree and
-pending maintainer review/formal acceptance; Phase 6 requires separate maintainer authorization.
-Phase 3 remains accepted.
+(`R23`) remains deferred unless separately approved. Phase 5 advanced ranking/discovery is
+**formally accepted** (2026-11-13, subject to documented limitations; see
+[`PHASE5_ACCEPTANCE.md`](./docs/development/phase-history/phase-5/PHASE5_ACCEPTANCE.md)); Phase 6 is
+not started and requires separate maintainer authorization. Phase 3 remains accepted.
 **Objective (implemented subset):** Add an explicit `hybrid` recommendation strategy (availability-aware
 weighted fusion) on top of validated content and collaborative strategies, while preserving privacy,
 explainability, deterministic behavior, and bounded resource use. Hybrid personalization (`R23`)
@@ -509,10 +512,11 @@ remains deferred unless separately approved.
 
 ## Phase 5 – Advanced Ranking, Discovery, and Optimization
 
-**Status:** **Implemented in working tree (pending maintainer review/formal acceptance).** Local
-verification passed in this task (`npm run verify`: format/lint/typecheck/test/build, 303 tests
-across 15 files). No formal acceptance is recorded; Phase 6 authorization requires separate
-maintainer approval.
+**Status:** **Formally accepted** by the maintainer (2026-11-13), subject to documented limitations
+and deferred features; see [`PHASE5_ACCEPTANCE.md`](./docs/development/phase-history/phase-5/PHASE5_ACCEPTANCE.md).
+Local verification passed (`npm run verify`: format/lint/typecheck/test/build, 303 tests across
+15 files); cross-platform CI run `43386404539` passed. Phase 6 is not started and requires separate
+maintainer authorization.
 
 **Objective (implemented subset):** Add explicit trending/discovery strategies and configurable
 local ranking controls on top of validated strategies, while preserving privacy, determinism, and
@@ -546,7 +550,8 @@ existing behavior.
   benchmarks for Phase 5 claims (not added in this task).
 - [ ] Separate security review artifact for Phase 5-specific inputs/weights beyond existing
   validation/bounds/tests (not produced).
-- [ ] Formal maintainer review/acceptance record.
+- [x] Formal maintainer review/acceptance record. **Accepted 2026-11-13** (see
+  [`PHASE5_ACCEPTANCE.md`](./docs/development/phase-history/phase-5/PHASE5_ACCEPTANCE.md)).
 
 ### Acceptance criteria (status)
 

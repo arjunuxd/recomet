@@ -7,7 +7,9 @@ Phase 3 collaborative filtering (collaborative-only) is **accepted** by the main
 (availability-aware fusion, implemented subset) is **formally accepted** by the maintainer
 (2026-11-07; see [`PHASE4_ACCEPTANCE.md`](./docs/development/phase-history/phase-4/PHASE4_ACCEPTANCE.md)), subject to documented limitations.
 Hybrid personalization (`R23`) remains deferred unless separately approved. Phase 5 advanced ranking/discovery
-is **implemented in this working tree (pending maintainer review/formal acceptance)**.
+is **formally accepted** by the maintainer (2026-11-13, subject to documented limitations and
+deferred features; see [`PHASE5_ACCEPTANCE.md`](./docs/development/phase-history/phase-5/PHASE5_ACCEPTANCE.md)).
+Phase 6 is not started.
 **Version:** 0.1.0 (pre-release)
 **Last updated:** 2026-11-13
 **Related:** [SPECIFICATION.md](./SPECIFICATION.md), [SECURITY.md](./SECURITY.md), [PRIVACY.md](./PRIVACY.md)
@@ -1005,8 +1007,10 @@ Detailed controls are in [SECURITY.md](./SECURITY.md).
   weights, truthful fallback/explanations, and preserved exclusions/target-interacted behavior.
   **Hybrid personalization (`R23`) remains deferred** unless separately approved.
 
-### Phase 5 implemented in this working tree (pending maintainer review/formal acceptance)
+### Phase 5 accepted (implemented subset, 2026-11-13)
 
+- Formally accepted by the maintainer, subject to documented limitations and deferred features; see
+  [`PHASE5_ACCEPTANCE.md`](./docs/development/phase-history/phase-5/PHASE5_ACCEPTANCE.md).
 - Explicit `trending` and `discovery` strategies with injectable request `now`, optional
   interaction timestamps, deterministic local time-window semantics, and cold-start/fallback
   handling.
@@ -1015,9 +1019,11 @@ Detailed controls are in [SECURITY.md](./SECURITY.md).
   components and preserved `auto` precedence (no auto-selection of `hybrid`/`trending`/
   `discovery`).
 - Request/config/interaction validation and tests extended for the implemented subset.
-- Local verification in this task: `npm run verify` passed (`format:check`, `lint`, `typecheck`,
-  `test`, `build`) with **303 tests across 15 files** on Node.js/Windows (see `PHASE5_REVIEW.md`
-  for consolidated evidence when prepared).
+- Local verification: `npm run verify` passed (`format:check`, `lint`, `typecheck`, `test`, `build`)
+  with **303 tests across 15 files**; cross-platform CI run
+  [`43386404539`](https://github.com/arjunuxd/recomet/actions/runs/43386404539) passed. See
+  [`PHASE5_ACCEPTANCE.md`](./docs/development/phase-history/phase-5/PHASE5_ACCEPTANCE.md) and
+  [`PHASE5_REVIEW.md`](./docs/development/active/PHASE5_REVIEW.md) for evidence.
 
 ### Not implemented / not claimed
 
@@ -1027,15 +1033,15 @@ Detailed controls are in [SECURITY.md](./SECURITY.md).
 - Hosted APIs/services/backends/databases/cloud, runtime network/external APIs/AI, telemetry,
   tracking, analytics, maintainer/end-user data collection/transmission/retention, mandatory
   persistence, or plugins/adapters not approved/implemented.
-- Phase 5 formal acceptance, Phase 6/release-readiness work, recommendation-quality evaluation
-  claims, new larger-workload performance/memory benchmark claims, or package publication.
+- Phase 6/release-readiness work, recommendation-quality evaluation claims, new larger-workload
+  performance/memory benchmark claims, or package publication.
 - Dedicated Phase 5 security-review artifact beyond implemented validation/bounds/tests.
 
 ### Verification status and limitations (current)
 
-- **Locally verified in this task:** format, lint, typecheck, tests, build, and full `verify`
-  passed for the current working tree. Static review found no runtime clock/network/persistence/
-  telemetry capability introduced in `src/`.
+- **Locally verified:** format, lint, typecheck, tests, build, and full `verify` passed for the
+  accepted implementation. Static review found no runtime clock/network/persistence/telemetry
+  capability introduced in `src/`.
 - **Not re-run/verified in this task:** real-browser matrix, `npm run bench`,
   `npm run pack:check`, `npm audit --omit=dev`/full audit, Safari/WebKit, OS-level network
   isolation, peak memory, and worst-case hard-limit performance.

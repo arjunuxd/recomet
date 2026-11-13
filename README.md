@@ -7,10 +7,11 @@ runs inside the integrating application, processes application-supplied data loc
 returns ranking results. It is a library — not a hosted service, central API, or
 data-collecting platform.
 
-> **Project status: Phases 2–4 are accepted by the maintainer (independent audits
+> **Project status: Phases 2–5 are accepted by the maintainer (independent audits
 > `APPROVE WITH CONDITIONS`; documented limitations remain visible; see phase-history acceptance
-> records). Phase 5 (advanced ranking & discovery) is implemented in this working tree and is
-> **pending maintainer review/formal acceptance**. Recomet is not published to npm.**
+> records). Phase 5 (advanced ranking & discovery) is **formally accepted** (2026-11-13), subject
+> to documented limitations and deferred features. Phase 6 is not started. Recomet is not
+> published to npm.**
 >
 > Phase 2 delivers **explicit preference-based content relevance** from per-request preferences
 > and mapped content attributes. Phase 3 adds **neighborhood-based collaborative filtering**
@@ -242,7 +243,7 @@ if neither signal is usable, it falls back truthfully to baseline. No silent ble
   configurable bounded hybrid weights, safe hybrid explanations/components, preserved
   exclusions/target-interacted behavior, and truthful fallback. Hybrid reuses the existing
   request-scoped collaborative similarity-evaluation budget.
-- Phase 5 (implemented in working tree, pending acceptance): explicit `trending` and `discovery`
+- Phase 5 (accepted 2026-11-13, implemented subset): explicit `trending` and `discovery`
   strategies computed locally from supplied data with injectable `now`, explicit time-window
   semantics, and cold-start/fallback handling; configurable ranking controls for popularity,
   freshness, diversity re-ranking, and trending factors with bounded/deterministic/explainable

@@ -5,8 +5,11 @@
 Phase 3 collaborative filtering (collaborative-only) is **accepted** by the maintainer (2026-11-07).
 Phase 4 explicit `hybrid` strategy (implemented subset) is **formally accepted** by the maintainer
 (2026-11-07), subject to documented limitations; hybrid personalization (`R23`) remains deferred
-unless separately approved. Historical evidence is preserved in [`docs/development/phase-history/`](./docs/development/phase-history/).
-**Last updated:** 2026-11-07
+unless separately approved. Phase 5 advanced ranking/discovery is **formally accepted** by the
+maintainer (2026-11-13, subject to documented limitations and deferred features; see
+[`PHASE5_ACCEPTANCE.md`](./docs/development/phase-history/phase-5/PHASE5_ACCEPTANCE.md)); Phase 6 is
+not started. Historical evidence is preserved in [`docs/development/phase-history/`](./docs/development/phase-history/).
+**Last updated:** 2026-11-13
 **Tagline:** Intelligent Recommendations. Your Data. Your Control.
 
 This document states Recomet's privacy guarantees, the boundaries of those guarantees, and

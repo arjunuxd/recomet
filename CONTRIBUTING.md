@@ -9,8 +9,10 @@ security, and long-term maintainability — not only whether they work.
 (collaborative-only) is **accepted** by the maintainer (2026-11-07). Phase 4 explicit `hybrid`
 strategy (implemented subset) is **formally accepted** by the maintainer (2026-11-07), subject to
 documented limitations; hybrid personalization (`R23`) remains deferred unless separately approved.
-Phase 5 is not started and requires separate authorization. Historical evidence is preserved in
-[`docs/development/`](./docs/development/). Please coordinate before starting significant work.
+Phase 5 advanced ranking/discovery is **formally accepted** by the maintainer (2026-11-13, subject
+to documented limitations and deferred features); Phase 6 is not started and requires separate
+authorization. Historical evidence is preserved in [`docs/development/`](./docs/development/).
+Please coordinate before starting significant work.
 
 ---
 
