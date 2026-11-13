@@ -1,13 +1,34 @@
 import type { PreferenceKind } from './personalization.js';
 
-export type StrategyId = 'baseline' | 'content' | 'collaborative' | 'hybrid';
+export type StrategyId =
+  'baseline' | 'content' | 'collaborative' | 'hybrid' | 'trending' | 'discovery';
 
 export type CollaborativeFactor = 'collaborative';
 
 /** Aggregate content component used in hybrid explanations (Phase 4). */
 export type HybridContentFactor = 'content';
 
-export type ScoreFactor = 'baseline' | PreferenceKind | CollaborativeFactor | HybridContentFactor;
+/** Phase 5: locally computed popularity from explicitly supplied interaction data. */
+export type PopularityFactor = 'popularity';
+
+/** Phase 5: time-based freshness from an item timestamp and injectable request time. */
+export type FreshnessFactor = 'freshness';
+
+/** Phase 5: diversity re-ranking adjustment (explained, bounded, deterministic). */
+export type DiversityFactor = 'diversity';
+
+/** Phase 5: locally computed trending intensity within an explicit time window */
+export type TrendingFactor = 'trending';
+
+export type ScoreFactor =
+  | 'baseline'
+  | PreferenceKind
+  | CollaborativeFactor
+  | HybridContentFactor
+  | PopularityFactor
+  | FreshnessFactor
+  | DiversityFactor
+  | TrendingFactor;
 
 export interface ScoreComponent {
   readonly factor: ScoreFactor;

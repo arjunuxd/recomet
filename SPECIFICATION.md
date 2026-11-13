@@ -5,10 +5,12 @@ maintainer (2026-11-05, independent audit `APPROVE WITH CONDITIONS`; documented 
 visible). Phase 3 collaborative filtering (collaborative-only) is **accepted** by the maintainer
 (2026-11-07, independent audit `APPROVE WITH CONDITIONS`; see [`PHASE3_ACCEPTANCE.md`](./docs/development/phase-history/phase-3/PHASE3_ACCEPTANCE.md)). Phase 4
 explicit hybrid recommendation strategy (`R12` subset, availability-aware fusion) is **formally accepted** by the maintainer
-(2026-11-07, implemented subset, independent audit `APPROVE WITH CONDITIONS`; see [`PHASE4_ACCEPTANCE.md`](./docs/development/phase-history/phase-4/PHASE4_ACCEPTANCE.md)), subject to documented limitations; hybrid
-personalization (`R23`) remains deferred unless separately approved. Phase 5 is not started. Nothing has been published.
+(2026-11-07, implemented subset, independent audit `APPROVE WITH CONDITIONS`; see [`PHASE4_ACCEPTANCE.md`](./docs/development/phase-history/phase-4/PHASE4_ACCEPTANCE.md)), subject to documented limitations. Hybrid
+personalization (`R23`) remains deferred unless separately approved. Phase 5 advanced ranking/discovery
+is **implemented in this working tree (pending maintainer review/formal acceptance)**; it is not yet
+recorded as accepted. Nothing has been published.
 **Version:** 0.1.0 (pre-release specification)
-**Last updated:** 2026-11-07
+**Last updated:** 2026-11-13
 **License:** Apache License 2.0
 
 **Scope revision (2026-11-05):** `Phase 3 is collaborative-only. Hybrid recommendations and hybrid personalization are deferred to Phase 4.` This revision updates phase assignments and roadmap structure; it does not delete hybrid requirements.
@@ -530,8 +532,8 @@ not collect signals or provide a user account system.
 | Hybrid recommendations | 4 | Not started; deferred from Phase 3. Combines content and collaborative signals. |
 | Hybrid personalization | 4 | Not started; deferred from Phase 3. Merges manual and learned interests. |
 | Cold-start handling | 2–5 | Explicit fallback behavior in implemented phases (Phase 2 content/no-signal; Phase 3 collaborative insufficient-data). Advanced fallbacks remain later work. |
-| Trending and discovery | 5 | Not implemented. Locally computed, bounded, explainable; not a hosted trend feed. |
-| Diversity and freshness | 5 | Not implemented. Configurable re-ranking with explicit trade-offs. |
+| Trending and discovery | 5 | **Implemented in working tree (pending acceptance).** Explicit `trending`/`discovery` strategies computed locally from supplied data with injectable `now`, explicit time-window semantics, bounded work, and cold-start/fallback handling; not a hosted trend feed. |
+| Diversity and freshness | 5 | **Implemented in working tree (pending acceptance).** Configurable freshness/popularity/trending ranking factors and bounded diversity re-ranking with deterministic, explainable behavior and documented trade-offs/limits. |
 | Advanced ranking weights and strategies | 4–5 | Content factor weights implemented; hybrid weighting is Phase 4 scope; broader strategy profiles/evaluation remain later work. |
 | Full recommendation-quality optimization | 5–6 | Not implemented. Evaluation harness and release gates remain later work. |
 
@@ -989,15 +991,20 @@ Recorded on 2026-11-05 for the Phase 2 milestone. These are **historical** local
 
 Phase 2 completion for its authorized subset was recorded and accepted by the maintainer on
 2026-11-05 (independent audit `APPROVE WITH CONDITIONS`; documented limitations remain visible).
-Phase 3 collaborative-only implementation followed by explicit maintainer decision and is
-undergoing final maintainer review; Phase 3 is **not** formally accepted and Phase 4 has not
-started.
+Phase 3 collaborative-only implementation was subsequently **formally accepted** by the maintainer
+on 2026-11-07 (independent audit `APPROVE WITH CONDITIONS`; see
+[PHASE3_ACCEPTANCE.md](./docs/development/phase-history/phase-3/PHASE3_ACCEPTANCE.md)). Phase 4 was
+later authorized, implemented for its approved subset, and formally accepted (2026-11-07). Phase 5
+is implemented in this working tree and pending maintainer review/formal acceptance.
 
-### Phase 3 implementation and verification evidence (collaborative-only; final maintainer review pending, 2026-11-06)
+### Phase 3 implementation and verification evidence (collaborative-only; historical record, 2026-11-06)
 
 Recorded on 2026-11-06 for the Phase 3 collaborative-only milestone and subsequent audit-resolution
-hardening. **Phase 3 is implemented and undergoing final maintainer review; it is not formally
-accepted.** Phase 4 has not started. No release-readiness or package-publication claim is made.
+hardening. This section preserves historical implementation and verification evidence from that
+worktree state; it does **not** represent current overall project acceptance status. Current status:
+Phase 3 and Phase 4 are formally accepted (subject to documented limitations) and Phase 5 is
+pending maintainer review/formal acceptance. No release-readiness or package-publication claim is
+made.
 
 - **Scope:** collaborative-only neighborhood filtering (user-based/item-based, cosine/Jaccard),
   explicit per-request `userId`/`interactions`, deterministic ranking/explanations, truthful

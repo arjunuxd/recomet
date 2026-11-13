@@ -23,7 +23,7 @@ export interface EngineLimits {
   readonly maxPreferenceValueLength?: number;
   /** Maximum values accepted from one mapped content-signal attribute of one item. */
   readonly maxSignalValuesPerItem?: number;
-  /** Maximum interaction records accepted in one collaborative request. */
+  /** Maximum interaction records accepted in one collaborative/trending request. */
   readonly maxInteractions?: number;
   /** Maximum UTF-16 length of an interaction type. */
   readonly maxInteractionTypeLength?: number;
@@ -96,10 +96,64 @@ export interface HybridStrategyConfig {
   readonly weights?: HybridStrategyWeights;
 }
 
+/** Phase 5: freshness scoring from item timestamps and an injectable reference time. */
+export interface FreshnessConfig {
+  /** Item attribute key containing a numeric timestamp (Unix epoch milliseconds or seconds). */
+  readonly attribute?: string;
+  /** Time unit for the attribute value. Default 'ms'. */
+  readonly unit?: 'ms' | 's';
+  /** Recency duration in the same unit as freshness timestamps (or ms). Default: 30 days. */
+  readonly window?: number;
+  /** Weight for freshness factor. Default 1. Finite >= 0, <= 1000. */
+  readonly weight?: number;
+  /** Half-life in window units for exponential decay; 0 disables decay (linear decay). */
+  readonly halfLife?: number;
+}
+
+/** Phase 5: popularity scoring from explicitly supplied interactions (local only). */
+export interface PopularityConfig {
+  /** Weight for popularity factor. Default 1. Finite >= 0, <= 1000. */
+  readonly weight?: number;
+  /** Interaction types to count toward popularity; undefined counts all valid interactions. */
+  readonly types?: readonly string[];
+}
+
+/** Phase 5: diversity re-ranking to reduce redundancy by an item attribute. */
+export interface DiversityConfig {
+  /** Item attribute key used for grouping/diversity. */
+  readonly attribute?: string;
+  /** Weight applied to diversity adjustment. Default 1. Finite >= 0, <= 1000. */
+  readonly weight?: number;
+  /** Maximum items to allow per group before penalization. Default 1. */
+  readonly maxPerGroup?: number;
+  /** Whether to apply penalty (true) or boost spread (true default behavior). */
+  readonly penalty?: boolean;
+}
+
+/** Phase 5: trending/discovery computed locally from supplied interactions with explicit time windows. */
+export interface TrendingConfig {
+  /** Time window length in milliseconds. Required for time-windowed trending when `now` is used. */
+  readonly windowMs?: number;
+  /** Weight for trending factor. Default 1. Finite >= 0, <= 1000. */
+  readonly weight?: number;
+  /** Interaction types to count for trending; undefined counts all valid interactions. */
+  readonly types?: readonly string[];
+  /** Recency half-life in milliseconds for decay; 0 disables. */
+  readonly halfLifeMs?: number;
+}
+
+export interface RankingConfig {
+  readonly freshness?: FreshnessConfig;
+  readonly popularity?: PopularityConfig;
+  readonly diversity?: DiversityConfig;
+  readonly trending?: TrendingConfig;
+}
+
 export interface RecommenderConfig {
   readonly strategy?: ConfiguredStrategy;
   readonly limits?: Partial<EngineLimits>;
   readonly content?: ContentStrategyConfig;
   readonly collaborative?: CollaborativeStrategyConfig;
   readonly hybrid?: HybridStrategyConfig;
+  readonly ranking?: RankingConfig;
 }

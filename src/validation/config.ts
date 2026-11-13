@@ -3,7 +3,12 @@ import type {
   CollaborativeSimilarity,
   CollaborativeStrategyConfig,
   ConfiguredStrategy,
+  DiversityConfig,
+  FreshnessConfig,
+  PopularityConfig,
+  RankingConfig,
   RecommenderConfig,
+  TrendingConfig,
 } from '../contracts/config.js';
 import { RecometError } from '../errors/recomet-error.js';
 import { isValidId } from '../internal/id.js';
@@ -19,6 +24,7 @@ import {
   assertPlainRecord,
   ownStringKeys,
   readDataProperty,
+  readDenseArray,
   UnsafeStructureError,
 } from '../internal/safe-object.js';
 import {
@@ -43,15 +49,57 @@ export interface ResolvedHybridConfig {
   readonly collaborativeWeight: number;
 }
 
+export interface ResolvedFreshnessConfig {
+  readonly attribute: string;
+  readonly unit: 'ms' | 's';
+  readonly window: number;
+  readonly weight: number;
+  readonly halfLife: number;
+}
+
+export interface ResolvedPopularityConfig {
+  readonly weight: number;
+  readonly types: readonly string[] | undefined;
+}
+
+export interface ResolvedDiversityConfig {
+  readonly attribute: string;
+  readonly weight: number;
+  readonly maxPerGroup: number;
+  readonly penalty: boolean;
+}
+
+export interface ResolvedTrendingConfig {
+  readonly windowMs: number;
+  readonly weight: number;
+  readonly types: readonly string[] | undefined;
+  readonly halfLifeMs: number;
+}
+
+export interface ResolvedRankingConfig {
+  readonly freshness: ResolvedFreshnessConfig | undefined;
+  readonly popularity: ResolvedPopularityConfig | undefined;
+  readonly diversity: ResolvedDiversityConfig | undefined;
+  readonly trending: ResolvedTrendingConfig | undefined;
+}
+
 export interface ResolvedConfig {
   readonly strategy: ConfiguredStrategy;
   readonly limits: ResolvedEngineLimits;
   readonly content: ResolvedContentConfig;
   readonly collaborative: ResolvedCollaborativeConfig;
   readonly hybrid: ResolvedHybridConfig;
+  readonly ranking: ResolvedRankingConfig;
 }
 
-const CONFIG_KEYS = ['strategy', 'limits', 'content', 'collaborative', 'hybrid'] as const;
+const CONFIG_KEYS = [
+  'strategy',
+  'limits',
+  'content',
+  'collaborative',
+  'hybrid',
+  'ranking',
+] as const;
 const CONTENT_KEYS = ['attributes', 'weights', 'caseSensitive'] as const;
 const COLLABORATIVE_KEYS = [
   'method',
@@ -62,14 +110,34 @@ const COLLABORATIVE_KEYS = [
 ] as const;
 const HYBRID_KEYS = ['weights'] as const;
 const HYBRID_WEIGHT_KEYS = ['content', 'collaborative'] as const;
+const RANKING_KEYS = ['freshness', 'popularity', 'diversity', 'trending'] as const;
+const FRESHNESS_KEYS = ['attribute', 'unit', 'window', 'weight', 'halfLife'] as const;
+const POPULARITY_KEYS = ['weight', 'types'] as const;
+const DIVERSITY_KEYS = ['attribute', 'weight', 'maxPerGroup', 'penalty'] as const;
+const TRENDING_KEYS = ['windowMs', 'weight', 'types', 'halfLifeMs'] as const;
 const COLLABORATIVE_METHODS = ['user', 'item', 'auto'] as const;
 const COLLABORATIVE_SIMILARITIES = ['cosine', 'jaccard'] as const;
+const SUPPORTED_STRATEGIES = [
+  'auto',
+  'baseline',
+  'content',
+  'collaborative',
+  'hybrid',
+  'trending',
+  'discovery',
+] as const;
 const MAX_INTERACTION_TYPE_WEIGHT = 1_000;
 const MAX_COLLABORATIVE_MIN_OVERLAP = 1_000;
 export const HYBRID_WEIGHT_MAX = 1_000;
+export const RANKING_WEIGHT_MAX = 1_000;
+export const MAX_RANKING_WINDOW = 31_536_000_000; // 365 days in ms (safe bound)
 
 function isConfigKey(key: string): key is (typeof CONFIG_KEYS)[number] {
   return (CONFIG_KEYS as readonly string[]).includes(key);
+}
+
+function isSupportedStrategy(value: unknown): value is ConfiguredStrategy {
+  return typeof value === 'string' && (SUPPORTED_STRATEGIES as readonly string[]).includes(value);
 }
 
 function isContentKey(key: string): key is (typeof CONTENT_KEYS)[number] {
@@ -88,6 +156,10 @@ function isHybridWeightKey(key: string): key is (typeof HYBRID_WEIGHT_KEYS)[numb
   return (HYBRID_WEIGHT_KEYS as readonly string[]).includes(key);
 }
 
+function isRankingKey(key: string): key is (typeof RANKING_KEYS)[number] {
+  return (RANKING_KEYS as readonly string[]).includes(key);
+}
+
 function isLimitKey(key: string): key is LimitKey {
   return (LIMIT_KEYS as readonly string[]).includes(key);
 }
@@ -98,6 +170,282 @@ function isPrototypePollutionKey(key: string): boolean {
 
 function invalidConfig(message: string, limit?: number): RecometError {
   return new RecometError('INVALID_CONFIG', message, limit === undefined ? undefined : { limit });
+}
+
+function readRankingWeight(value: unknown, pathName: string): number {
+  if (
+    typeof value !== 'number' ||
+    !Number.isFinite(value) ||
+    value < 0 ||
+    value > RANKING_WEIGHT_MAX
+  ) {
+    throw invalidConfig(
+      `${pathName} must be a finite number within the documented range.`,
+      RANKING_WEIGHT_MAX,
+    );
+  }
+  return value;
+}
+
+function readBoundedNumber(
+  value: unknown,
+  min: number,
+  max: number,
+  pathName: string,
+  integer = false,
+): number {
+  if (
+    typeof value !== 'number' ||
+    !Number.isFinite(value) ||
+    (integer && !Number.isSafeInteger(value)) ||
+    value < min ||
+    value > max
+  ) {
+    throw invalidConfig(`${pathName} must be within the documented range.`, max);
+  }
+  return value;
+}
+
+function readTypeList(value: unknown, limits: ResolvedEngineLimits): readonly string[] | undefined {
+  let elements: unknown[];
+  try {
+    elements = readDenseArray(value, limits.maxInteractionTypeWeights);
+  } catch (error) {
+    if (error instanceof UnsafeStructureError && error.reason === 'too-long') {
+      throw invalidConfig(
+        'Type list exceeds the configured maximum.',
+        limits.maxInteractionTypeWeights,
+      );
+    }
+    throw error;
+  }
+  const out: string[] = [];
+  for (const element of elements) {
+    if (
+      typeof element !== 'string' ||
+      element.length === 0 ||
+      element.length > limits.maxInteractionTypeLength ||
+      element.includes('\u0000') ||
+      isPrototypePollutionKey(element)
+    ) {
+      throw invalidConfig(
+        'Type list entries must be non-empty bounded identifiers.',
+        limits.maxInteractionTypeLength,
+      );
+    }
+    if (!out.includes(element)) {
+      out.push(element);
+    }
+  }
+  return out.length === 0 ? undefined : Object.freeze(out);
+}
+
+function resolveFreshness(
+  value: unknown,
+  limits: ResolvedEngineLimits,
+): ResolvedFreshnessConfig | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  assertPlainRecord(value);
+  const raw = value as Record<string, unknown> & FreshnessConfig;
+  const keys = ownStringKeys(raw);
+  for (const key of keys) {
+    if (!(FRESHNESS_KEYS as readonly string[]).includes(key)) {
+      throw invalidConfig('Freshness configuration contains an unsupported field.');
+    }
+  }
+  const attributeRaw = keys.includes('attribute')
+    ? readDataProperty(raw, 'attribute')
+    : 'timestamp';
+  const attribute = resolveAttributeKey(attributeRaw, limits);
+  if (attribute === undefined) {
+    throw invalidConfig(
+      'Freshness attribute must be a non-empty bounded attribute key.',
+      limits.maxAttributeStringLength,
+    );
+  }
+  let unit: 'ms' | 's' = 'ms';
+  if (keys.includes('unit')) {
+    const u = readDataProperty(raw, 'unit');
+    if (u !== 'ms' && u !== 's') {
+      throw invalidConfig('Freshness unit must be "ms" or "s".');
+    }
+    unit = u;
+  }
+  const window = keys.includes('window')
+    ? readBoundedNumber(readDataProperty(raw, 'window'), 1, MAX_RANKING_WINDOW, 'Freshness window')
+    : 30 * 24 * 60 * 60 * 1000;
+  const weight = keys.includes('weight')
+    ? readRankingWeight(readDataProperty(raw, 'weight'), 'Freshness weight')
+    : 1;
+  const halfLife = keys.includes('halfLife')
+    ? readBoundedNumber(
+        readDataProperty(raw, 'halfLife'),
+        0,
+        MAX_RANKING_WINDOW,
+        'Freshness halfLife',
+      )
+    : 0;
+  if (weight === 0) {
+    return undefined;
+  }
+  return Object.freeze({ attribute, unit, window, weight, halfLife });
+}
+
+function resolvePopularity(
+  value: unknown,
+  limits: ResolvedEngineLimits,
+): ResolvedPopularityConfig | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  assertPlainRecord(value);
+  const raw = value as Record<string, unknown> & PopularityConfig;
+  const keys = ownStringKeys(raw);
+  for (const key of keys) {
+    if (!(POPULARITY_KEYS as readonly string[]).includes(key)) {
+      throw invalidConfig('Popularity configuration contains an unsupported field.');
+    }
+  }
+  const weight = keys.includes('weight')
+    ? readRankingWeight(readDataProperty(raw, 'weight'), 'Popularity weight')
+    : 1;
+  const types = keys.includes('types')
+    ? readTypeList(readDataProperty(raw, 'types'), limits)
+    : undefined;
+  if (weight === 0) {
+    return undefined;
+  }
+  return Object.freeze({ weight, types });
+}
+
+function resolveDiversity(
+  value: unknown,
+  limits: ResolvedEngineLimits,
+): ResolvedDiversityConfig | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  assertPlainRecord(value);
+  const raw = value as Record<string, unknown> & DiversityConfig;
+  const keys = ownStringKeys(raw);
+  for (const key of keys) {
+    if (!(DIVERSITY_KEYS as readonly string[]).includes(key)) {
+      throw invalidConfig('Diversity configuration contains an unsupported field.');
+    }
+  }
+  const attributeRaw = keys.includes('attribute') ? readDataProperty(raw, 'attribute') : 'category';
+  const attribute = resolveAttributeKey(attributeRaw, limits);
+  if (attribute === undefined) {
+    throw invalidConfig(
+      'Diversity attribute must be a non-empty bounded attribute key.',
+      limits.maxAttributeStringLength,
+    );
+  }
+  const weight = keys.includes('weight')
+    ? readRankingWeight(readDataProperty(raw, 'weight'), 'Diversity weight')
+    : 1;
+  const maxPerGroup = keys.includes('maxPerGroup')
+    ? readBoundedNumber(
+        readDataProperty(raw, 'maxPerGroup'),
+        1,
+        10_000,
+        'Diversity maxPerGroup',
+        true,
+      )
+    : 1;
+  let penalty = true;
+  if (keys.includes('penalty')) {
+    const p = readDataProperty(raw, 'penalty');
+    if (typeof p !== 'boolean') {
+      throw invalidConfig('Diversity penalty must be a boolean.');
+    }
+    penalty = p;
+  }
+  if (weight === 0) {
+    return undefined;
+  }
+  return Object.freeze({ attribute, weight, maxPerGroup, penalty });
+}
+
+function resolveTrending(
+  value: unknown,
+  limits: ResolvedEngineLimits,
+): ResolvedTrendingConfig | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  assertPlainRecord(value);
+  const raw = value as Record<string, unknown> & TrendingConfig;
+  const keys = ownStringKeys(raw);
+  for (const key of keys) {
+    if (!(TRENDING_KEYS as readonly string[]).includes(key)) {
+      throw invalidConfig('Trending configuration contains an unsupported field.');
+    }
+  }
+  const windowMs = keys.includes('windowMs')
+    ? readBoundedNumber(
+        readDataProperty(raw, 'windowMs'),
+        1,
+        MAX_RANKING_WINDOW,
+        'Trending windowMs',
+      )
+    : 24 * 60 * 60 * 1000;
+  const weight = keys.includes('weight')
+    ? readRankingWeight(readDataProperty(raw, 'weight'), 'Trending weight')
+    : 1;
+  const types = keys.includes('types')
+    ? readTypeList(readDataProperty(raw, 'types'), limits)
+    : undefined;
+  const halfLifeMs = keys.includes('halfLifeMs')
+    ? readBoundedNumber(
+        readDataProperty(raw, 'halfLifeMs'),
+        0,
+        MAX_RANKING_WINDOW,
+        'Trending halfLifeMs',
+      )
+    : 0;
+  if (weight === 0) {
+    return undefined;
+  }
+  return Object.freeze({ windowMs, weight, types, halfLifeMs });
+}
+
+function resolveRanking(value: unknown, limits: ResolvedEngineLimits): ResolvedRankingConfig {
+  if (value === undefined) {
+    return Object.freeze({
+      freshness: undefined,
+      popularity: undefined,
+      diversity: undefined,
+      trending: undefined,
+    });
+  }
+  assertPlainRecord(value);
+  const raw = value as Record<string, unknown> & RankingConfig;
+  const keys = ownStringKeys(raw);
+  for (const key of keys) {
+    if (!isRankingKey(key)) {
+      throw invalidConfig('Ranking configuration contains an unsupported field.');
+    }
+  }
+  const freshness = resolveFreshness(
+    keys.includes('freshness') ? readDataProperty(raw, 'freshness') : undefined,
+    limits,
+  );
+  const popularity = resolvePopularity(
+    keys.includes('popularity') ? readDataProperty(raw, 'popularity') : undefined,
+    limits,
+  );
+  const diversity = resolveDiversity(
+    keys.includes('diversity') ? readDataProperty(raw, 'diversity') : undefined,
+    limits,
+  );
+  const trending = resolveTrending(
+    keys.includes('trending') ? readDataProperty(raw, 'trending') : undefined,
+    limits,
+  );
+  return Object.freeze({ freshness, popularity, diversity, trending });
 }
 
 /**
@@ -117,6 +465,7 @@ export function resolveConfig(config?: RecommenderConfig): ResolvedConfig {
         content: resolveContent(undefined, limits),
         collaborative: resolveCollaborative(undefined, limits),
         hybrid: resolveHybrid(undefined),
+        ranking: resolveRanking(undefined, limits),
       });
     }
 
@@ -132,13 +481,7 @@ export function resolveConfig(config?: RecommenderConfig): ResolvedConfig {
     let strategy: ConfiguredStrategy = DEFAULT_STRATEGY;
     if (configKeys.includes('strategy')) {
       const value = readDataProperty(config, 'strategy');
-      if (
-        value !== 'auto' &&
-        value !== 'baseline' &&
-        value !== 'content' &&
-        value !== 'collaborative' &&
-        value !== 'hybrid'
-      ) {
+      if (!isSupportedStrategy(value)) {
         throw new RecometError(
           'UNSUPPORTED_STRATEGY',
           'The requested recommendation strategy is not supported.',
@@ -159,8 +502,12 @@ export function resolveConfig(config?: RecommenderConfig): ResolvedConfig {
     const hybrid = resolveHybrid(
       configKeys.includes('hybrid') ? readDataProperty(config, 'hybrid') : undefined,
     );
+    const ranking = resolveRanking(
+      configKeys.includes('ranking') ? readDataProperty(config, 'ranking') : undefined,
+      limits,
+    );
 
-    return Object.freeze({ strategy, limits, content, collaborative, hybrid });
+    return Object.freeze({ strategy, limits, content, collaborative, hybrid, ranking });
   } catch (error) {
     if (error instanceof RecometError) {
       throw error;

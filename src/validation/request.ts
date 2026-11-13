@@ -29,6 +29,7 @@ export interface ValidatedItem {
   readonly id: string;
   readonly sourceIndex: number;
   readonly signals?: ContentSignals | undefined;
+  readonly attributes?: Readonly<Record<string, unknown>> | undefined;
 }
 
 export interface ValidatedRequest {
@@ -46,6 +47,9 @@ export interface ValidatedRequest {
   readonly interactionModel: InteractionModel | undefined;
   readonly collaborativeRequested: boolean;
   readonly hybridRequested: boolean;
+  readonly trendingRequested: boolean;
+  readonly discoveryRequested: boolean;
+  readonly now: number | undefined;
 }
 
 const REQUEST_KEYS = [
@@ -55,6 +59,7 @@ const REQUEST_KEYS = [
   'preferences',
   'userId',
   'interactions',
+  'now',
 ] as const;
 const ITEM_KEYS = ['id', 'attributes'] as const;
 
@@ -206,17 +211,37 @@ export function validateRequest(request: unknown, config: ResolvedConfig): Valid
       interactions = validateInteractions(readDataProperty(request, 'interactions'), limits);
     }
 
+    let now: number | undefined;
+    if (requestKeys.includes('now')) {
+      const rawNow = readDataProperty(request, 'now');
+      if (
+        typeof rawNow !== 'number' ||
+        !Number.isFinite(rawNow) ||
+        !Number.isSafeInteger(rawNow) ||
+        rawNow < 0
+      ) {
+        throw invalidRequest(
+          'Request now must be a finite, non-negative safe integer (Unix epoch milliseconds).',
+          'now',
+        );
+      }
+      now = rawNow;
+    }
+
+    const rankingUsesInteractions =
+      config.ranking.popularity !== undefined || config.ranking.trending !== undefined;
+
     if (config.strategy === 'baseline') {
       if (hasPreferences) {
         throw invalidRequest('Preferences cannot be used with the baseline strategy.');
       }
-      if (userId !== undefined || interactions !== undefined) {
+      if (userId !== undefined || (interactions !== undefined && !rankingUsesInteractions)) {
         throw invalidRequest('Collaborative inputs cannot be used with the baseline strategy.');
       }
     }
 
     if (config.strategy === 'content') {
-      if (userId !== undefined || interactions !== undefined) {
+      if (userId !== undefined || (interactions !== undefined && !rankingUsesInteractions)) {
         throw invalidRequest('Collaborative inputs cannot be used with the content strategy.');
       }
     }
@@ -229,6 +254,22 @@ export function validateRequest(request: unknown, config: ResolvedConfig): Valid
         throw invalidRequest(
           'interactions are required for the collaborative strategy.',
           'interactions',
+        );
+      }
+    }
+
+    const trendingRequested = config.strategy === 'trending' || config.strategy === 'discovery';
+    if (trendingRequested) {
+      if (interactions === undefined) {
+        throw invalidRequest(
+          'interactions are required for trending and discovery strategies.',
+          'interactions',
+        );
+      }
+      if (now === undefined) {
+        throw invalidRequest(
+          'now is required for trending and discovery strategies (injectable deterministic time).',
+          'now',
         );
       }
     }
@@ -250,7 +291,13 @@ export function validateRequest(request: unknown, config: ResolvedConfig): Valid
       strategy = 'collaborative';
     } else if (hybridRequested) {
       strategy = 'hybrid';
+    } else if (config.strategy === 'trending') {
+      strategy = 'trending';
+    } else if (config.strategy === 'discovery') {
+      strategy = 'discovery';
     } else if (config.strategy === 'auto' && hasCollaborativeContext) {
+      // Preserve existing auto precedence exactly (Phase 4 decision): collaborative > content > baseline.
+      // Trending/discovery are explicit strategies and are not auto-selected.
       strategy = 'collaborative';
     } else if (config.strategy === 'auto' && hasUsablePreferences) {
       strategy = 'content';
@@ -258,14 +305,19 @@ export function validateRequest(request: unknown, config: ResolvedConfig): Valid
       strategy = 'baseline';
     }
 
-    // Extract content signals when content may be used now, as fallback, or by hybrid.
+    // Extract content signals when content may be used now, as fallback, or by hybrid/discovery.
     const needsContentSignals =
       strategy === 'content' ||
       strategy === 'hybrid' ||
+      strategy === 'discovery' ||
       (strategy === 'collaborative' && hasUsablePreferences) ||
       (collaborativeRequested && hasUsablePreferences);
+    const needsAttributes =
+      config.ranking.freshness !== undefined || config.ranking.diversity !== undefined;
     const interactionModel =
-      hasCollaborativeContext && userId !== undefined && interactions !== undefined
+      (hasCollaborativeContext || hybridRequested || strategy === 'discovery') &&
+      userId !== undefined &&
+      interactions !== undefined
         ? buildInteractionModel(interactions, config.collaborative, limits)
         : undefined;
 
@@ -320,6 +372,7 @@ export function validateRequest(request: unknown, config: ResolvedConfig): Valid
       seenIds.add(id);
 
       let signals: ContentSignals | undefined;
+      let attributesSnapshot: Readonly<Record<string, unknown>> | undefined;
       if (itemKeys.includes('attributes')) {
         const attributes = readDataProperty(rawItem, 'attributes');
         if (attributes === undefined || !isPlainRecord(attributes)) {
@@ -328,6 +381,15 @@ export function validateRequest(request: unknown, config: ResolvedConfig): Valid
         validateAttributes(attributes, index, limits, attributeBudget);
         if (needsContentSignals) {
           signals = extractContentSignals(attributes, index, limits, config.content);
+        }
+        if (needsAttributes) {
+          const keys = ownStringKeys(attributes);
+          const snap: Record<string, unknown> = Object.create(null) as Record<string, unknown>;
+          for (const key of keys) {
+            // Safe own-data reads only; attributes already validated.
+            snap[key] = readDataProperty(attributes, key);
+          }
+          attributesSnapshot = Object.freeze(snap);
         }
       }
 
@@ -339,7 +401,7 @@ export function validateRequest(request: unknown, config: ResolvedConfig): Valid
         excludedItems += 1;
       }
 
-      validatedItems.push({ id, sourceIndex: index, signals });
+      validatedItems.push({ id, sourceIndex: index, signals, attributes: attributesSnapshot });
     }
 
     return {
@@ -357,6 +419,9 @@ export function validateRequest(request: unknown, config: ResolvedConfig): Valid
       interactionModel,
       collaborativeRequested,
       hybridRequested,
+      trendingRequested,
+      discoveryRequested: config.strategy === 'discovery',
+      now,
     };
   } catch (error) {
     if (error instanceof RecometError) {

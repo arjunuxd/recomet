@@ -11,8 +11,9 @@ F-01/C-01 remediated with exact G1–G10 golden-vector tests; see [`PHASE4_ACCEP
 (deferred dedicated hybrid benchmarks; Safari/WebKit, OS-level network isolation, peak memory, and
 worst-case hard-limit performance unverified; 10 moderate development-only npm audit advisories
 tracked; JS proxy inspection not sandboxed; additive hybrid strategy may require exhaustive-switch
-updates). Hybrid personalization (`R23`) remains deferred unless separately approved. Phase 5 not
-started and requires separate maintainer authorization.
+updates). Hybrid personalization (`R23`) remains deferred unless separately approved. Phase 5
+advanced ranking/discovery is **implemented in this working tree (pending maintainer review/formal
+acceptance)**.
 **Last updated:** 2026-11-13
 **Versioning:** Semantic Versioning from the first public release
 **License:** Apache License 2.0
@@ -453,8 +454,9 @@ development-only advisories tracked (no unauthorized upgrades). Accepted limitat
 documented (dedicated hybrid benchmark scenarios deferred; Safari/WebKit, OS-level network isolation,
 peak memory, and worst-case hard-limit performance unverified; JS proxy inspection not sandboxed;
 additive hybrid strategy may require exhaustive-switch TypeScript updates). Hybrid personalization
-(`R23`) remains deferred unless separately approved. Phase 5 not started and requires separate
-maintainer authorization. Phase 3 remains accepted.
+(`R23`) remains deferred unless separately approved. Phase 5 is implemented in the working tree and
+pending maintainer review/formal acceptance; Phase 6 requires separate maintainer authorization.
+Phase 3 remains accepted.
 **Objective (implemented subset):** Add an explicit `hybrid` recommendation strategy (availability-aware
 weighted fusion) on top of validated content and collaborative strategies, while preserving privacy,
 explainability, deterministic behavior, and bounded resource use. Hybrid personalization (`R23`)
@@ -505,50 +507,60 @@ remains deferred unless separately approved.
 
 ---
 
-## Phase 5 — Advanced Ranking, Discovery, and Optimization
+## Phase 5 – Advanced Ranking, Discovery, and Optimization
 
-**Objective:** Add configurable personalized ranking, trending/discovery, diversity,
-freshness, and optimization on top of validated strategies.
+**Status:** **Implemented in working tree (pending maintainer review/formal acceptance).** Local
+verification passed in this task (`npm run verify`: format/lint/typecheck/test/build, 303 tests
+across 15 files). No formal acceptance is recorded; Phase 6 authorization requires separate
+maintainer approval.
 
-### Deliverables
+**Objective (implemented subset):** Add explicit trending/discovery strategies and configurable
+local ranking controls on top of validated strategies, while preserving privacy, determinism, and
+existing behavior.
 
-- Advanced local interest learning from supplied interaction signals, with bounded profiles,
-  deterministic fallbacks, and explainable contributions.
-- Configurable ranking weights and profiles with validation, normalization, and
-  explainable contributions.
-- Advanced personalized ranking using approved relevance, interaction, freshness,
-  popularity, and diversity factors.
-- Trending and discovery recommendations computed locally from supplied data with explicit
-  time-window semantics and cold-start handling.
-- Diversity re-ranking and freshness controls with documented trade-offs, bounded work, and
-  configurable limits.
-- Strategy selection/fallback rules, including explicit baseline/content/collaborative/hybrid
-  fallbacks as implemented.
-- Explanation model expansion for all new factors; no opaque or unimplemented factors.
-- Tuning guidance and reproducible quality evaluation; guard against overclaiming.
-- Performance and memory benchmarks for larger workloads before any scalability claim.
-- Security review of weight configuration, profile size, and adversarial input.
-- Documentation of algorithms, weights, trade-offs, examples, and limitations.
+### Deliverables (implemented subset)
 
-### Dependencies
+- [x] Configurable ranking controls with validation and bounded weights: popularity, freshness,
+  trending, and diversity (`config.ranking`).
+- [x] Explicit `trending` and `discovery` strategies computed locally from explicitly supplied
+  interaction data with injectable request `now`, explicit time-window semantics, deterministic
+  behavior, and cold-start/fallback handling.
+- [x] Freshness scoring from item timestamp attributes using injectable `now` (no wall-clock reads).
+- [x] Popularity scoring from supplied interactions (local only).
+- [x] Bounded, deterministic diversity re-ranking with explainable adjustment and documented
+  trade-offs/limits in config/contracts.
+- [x] Strategy/fallback rules and truthful summaries expanded for implemented Phase 5 paths;
+  existing `auto` precedence preserved (no auto-selection of `hybrid`/`trending`/`discovery`).
+- [x] Explanation expansion for implemented factors (`popularity`, `freshness`, `trending`,
+  `diversity`) with no opaque/unimplemented factors advertised.
+- [x] Request/interaction validation extended for `now` and optional interaction timestamps with
+  value-free/bounded-safe errors.
+- [x] Automated tests added/updated for implemented Phase 5 behavior and compatibility.
 
-- Phase 4 complete.
-- Approved ranking factors, weights, and defaults.
-- Quality evaluation harness and thresholds.
-- Defined time/freshness semantics without hidden clock dependence in deterministic tests.
-- Resource budgets for re-ranking and discovery.
+### Not completed / limitations (Phase 5 scope items not fully claimed)
 
-### Acceptance criteria
+- [ ] Advanced local interest learning from supplied interaction signals with bounded learned
+  profiles (not implemented).
+- [ ] Broader configurable ranking/strategy profiles and tuning guidance beyond implemented controls.
+- [ ] Reproducible quality-evaluation harness/report and dedicated larger-workload performance/memory
+  benchmarks for Phase 5 claims (not added in this task).
+- [ ] Separate security review artifact for Phase 5-specific inputs/weights beyond existing
+  validation/bounds/tests (not produced).
+- [ ] Formal maintainer review/acceptance record.
 
-- All advertised advanced ranking/discovery capabilities are implemented and tested.
-- Weights and strategies are configurable, validated, bounded, and reflected in explanations.
-- Diversity/freshness controls work and document their trade-offs.
-- No unimplemented ranking factor is presented as functional.
-- Time-dependent behaviour is injectable/deterministic for tests and documented.
-- Benchmarks support any performance claims made.
-- Privacy and security invariants remain intact.
-- No release-readiness documentation/hardening from Phase 6 is skipped.
-- Maintainer approval authorizes Phase 6.
+### Acceptance criteria (status)
+
+- [x] Implemented advanced ranking/discovery capabilities in this subset are tested locally.
+- [x] Implemented weights/strategies/controls are configurable, validated, bounded, and reflected in
+  explanations.
+- [x] Implemented diversity/freshness/trending controls work with documented trade-offs/limits.
+- [x] No unimplemented ranking factor is presented as functional.
+- [x] Time-dependent behavior is injectable/deterministic in implemented paths.
+- [ ] Benchmarks support any broader Phase 5 performance/scalability claims (no new claims made).
+- [x] Privacy/security invariants preserved in implemented changes (local-only, no network/storage/
+  telemetry, bounded validation).
+- [ ] No Phase 6 release-readiness hardening claimed complete.
+- [ ] Maintainer approval authorizes Phase 6.
 
 ---
 

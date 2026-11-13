@@ -6,9 +6,10 @@ Phase 3 collaborative filtering (collaborative-only) is **accepted** by the main
 (2026-11-07; see [`PHASE3_ACCEPTANCE.md`](./docs/development/phase-history/phase-3/PHASE3_ACCEPTANCE.md)). Phase 4 explicit `hybrid` strategy
 (availability-aware fusion, implemented subset) is **formally accepted** by the maintainer
 (2026-11-07; see [`PHASE4_ACCEPTANCE.md`](./docs/development/phase-history/phase-4/PHASE4_ACCEPTANCE.md)), subject to documented limitations.
-Hybrid personalization (`R23`) remains deferred unless separately approved. Phase 5 is not started.
+Hybrid personalization (`R23`) remains deferred unless separately approved. Phase 5 advanced ranking/discovery
+is **implemented in this working tree (pending maintainer review/formal acceptance)**.
 **Version:** 0.1.0 (pre-release)
-**Last updated:** 2026-11-07
+**Last updated:** 2026-11-13
 **Related:** [SPECIFICATION.md](./SPECIFICATION.md), [SECURITY.md](./SECURITY.md), [PRIVACY.md](./PRIVACY.md)
 
 **Historical decision (2026-11-05):** `Phase 3 is collaborative-only. Hybrid recommendations and hybrid personalization are deferred to Phase 4.` (Preserved; Phase 4 implemented subset later authorized and accepted as recorded.)
@@ -984,95 +985,64 @@ Detailed controls are in [SECURITY.md](./SECURITY.md).
 
 ---
 
-## 16. Implementation Boundary (Phases 1 and 2)
+## 16. Implementation Boundary and Status (current worktree)
 
-### Phase 1 included
+### Accepted phases (historical evidence preserved)
 
-- Factory, instance, immutable resolved config.
-- Public contracts for content, request, result, scores, config, errors, and forward-looking
-  personalization types.
-- Request and attribute validation with explicit limits.
-- Neutral baseline candidate source.
-- Score component model and deterministic bounded ranker.
-- Safe typed errors.
-- Unit, integration, edge-case, and security tests.
-- Node.js and browser verification.
-- Benchmarks with recorded conditions.
-- Documentation matching the implementation.
+- **Phase 1:** core engine foundation (factory, contracts, validation/limits, neutral baseline,
+  deterministic bounded ranking, typed value-free errors, tests/docs as recorded).
+- **Phase 2:** explicit preference-based content relevance for the authorized subset (mappings,
+  weights, bounded signal extraction, weighted-coverage scoring, strategy/fallback behavior,
+  limits/errors/tests/docs). Similarity, interaction learning, and profiles remain out of scope.
+- **Phase 3 (collaborative-only):** formally accepted 2026-11-07 (see
+  `docs/development/phase-history/phase-3/PHASE3_ACCEPTANCE.md`), subject to documented
+  limitations. Includes explicit per-request `userId`/`interactions`, strict validation/bounds,
+  user/item neighborhood methods (cosine/Jaccard), deterministic explainable scoring, truthful
+  cold-start/fallback behavior, and in-memory-only processing.
+- **Phase 4 (explicit `hybrid`, implemented subset):** formally accepted 2026-11-07 (see
+  `docs/development/phase-history/phase-4/PHASE4_ACCEPTANCE.md` and related records), subject to
+  documented limitations. Includes availability-aware weighted fusion, bounded/validated hybrid
+  weights, truthful fallback/explanations, and preserved exclusions/target-interacted behavior.
+  **Hybrid personalization (`R23`) remains deferred** unless separately approved.
 
-### Phase 2 included
+### Phase 5 implemented in this working tree (pending maintainer review/formal acceptance)
 
-- Optional per-request explicit preferences with five label kinds and positive weights.
-- Developer attribute mappings, factor weights, and optional case-sensitive matching.
-- Bounded mapped-signal extraction and normalization.
-- Deterministic weighted-coverage content scoring with per-kind explanation components.
-- Strategy selection (`auto`, `baseline`, `content`) and explicit baseline fallback.
-- Preference/content limits and the `INVALID_PREFERENCES` error code.
-- Preference/content validation, security, privacy, integration, and browser tests.
+- Explicit `trending` and `discovery` strategies with injectable request `now`, optional
+  interaction timestamps, deterministic local time-window semantics, and cold-start/fallback
+  handling.
+- Configurable, validated, bounded ranking controls for popularity, freshness, diversity
+  re-ranking, and trending factors where applicable (`config.ranking`), with explainable
+  components and preserved `auto` precedence (no auto-selection of `hybrid`/`trending`/
+  `discovery`).
+- Request/config/interaction validation and tests extended for the implemented subset.
+- Local verification in this task: `npm run verify` passed (`format:check`, `lint`, `typecheck`,
+  `test`, `build`) with **303 tests across 15 files** on Node.js/Windows (see `PHASE5_REVIEW.md`
+  for consolidated evidence when prepared).
 
-### Included in Phase 3 implementation (collaborative-only, final maintainer review pending)
+### Not implemented / not claimed
 
-- Request fields `userId` and `interactions` (explicitly supplied per call) for collaborative
-  filtering; interaction records validated as plain objects with bounded IDs/type and finite,
-  non-negative `value` when provided (negative values rejected with `INVALID_INTERACTION`; no
-  dislike/negative-feedback semantics in Phase 3).
-- Effective strength precedence: explicit `value` > configured `interactionTypes[type]` >
-  default `1`. Unknown but valid unconfigured interaction `type` defaults to `1` when `value`
-  is absent. Duplicate `(userId, itemId)` interactions are summed deterministically.
-- Normalization (Decision A): denominator floor is `1`; strengths with absolute value `<= 1`
-  retain magnitude (no all-below-1 rescaling to max `1`); when observed max absolute strength
-  `> 1`, normalize relative to that maximum. Values remain finite and bounded.
-- Collaborative strategies/methods: user-based and item-based neighborhood filtering with
-  cosine/Jaccard similarity, configurable interaction-type weights, min overlap, and bounded
-  neighbors.
-- Strategy handling: `baseline`, `content`, `collaborative`, `auto`; auto selects one applicable
-  strategy (no silent blending). Explicit collaborative falls back to content or baseline with
-  accurate strategy/explanations (never labeled collaborative).
-- Deterministic scoring/ranking, exclusion of target-user interacted items, cold-start/
-  insufficient-data handling, and `INVALID_INTERACTION` errors.
-- Interaction data processed in memory for the current call only; no retention/persistence/
-  collection/telemetry/network.
+- Hybrid personalization (`R23`), automatic interest learning, persistent/learned user profiles,
+  automatic interaction collection, content similarity/similar-item endpoints, embeddings/fuzzy
+  matching.
+- Hosted APIs/services/backends/databases/cloud, runtime network/external APIs/AI, telemetry,
+  tracking, analytics, maintainer/end-user data collection/transmission/retention, mandatory
+  persistence, or plugins/adapters not approved/implemented.
+- Phase 5 formal acceptance, Phase 6/release-readiness work, recommendation-quality evaluation
+  claims, new larger-workload performance/memory benchmark claims, or package publication.
+- Dedicated Phase 5 security-review artifact beyond implemented validation/bounds/tests.
 
-### Still excluded (Phase 4+)
+### Verification status and limitations (current)
 
-- Hybrid recommendations (`R12`) and hybrid personalization (`R23`), hybrid strategy/weighting,
-  content-collaborative score blending.
-- Content similarity/similar-item endpoints, embeddings, fuzzy matching.
-- Automatic interaction collection/learning, persistent profiles, cross-application sharing.
-- Popularity, trending, freshness, time decay, diversity, advanced ranking profiles.
-- Persistence adapters, hosted APIs/backends, telemetry, analytics, network services.
-
-### Implementation status (2026-11-06, this worktree; Phase 3 audit resolution applied)
-
-- **Implemented:** Phase 1 and Phase 2 accepted scope plus Phase 3 collaborative-only filtering,
-  built/tested as `@recomet/core@0.1.0` (unpublished). **Formal Phase 3 acceptance is pending
-  final maintainer review.** Phase 4 has not started. Zero runtime dependencies; ESM output.
-- **Phase 3 audit resolution (2026-11-06):** F-02 normalization semantics preserved and documented
-  (denominator floor `1`; no all-below-1 rescaling). F-03 explicit `interaction.value` validated
-  as finite non-negative (negative rejected, `INVALID_INTERACTION`; no dislike semantics in Phase 3).
-  F-04 unknown valid interaction types default to strength `1` when `value` absent (documented/tested).
-  Historical evidence labeling and current-status documentation corrected (F-01).
-- **Pre-correction audit evidence (historical, 2026-11-06 audit):** `npm test` reported 13 test
-  files, 224 tests passed before these corrections. Treat as audit baseline, not post-correction.
-- **Post-correction verification (2026-11-06, this worktree):** `npm run typecheck` PASS;
-  `npm run lint` PASS; `npm run format:check` PASS; `npm test` PASS (**13 test files, 239 tests
-  passed, 0 failed, 0 skipped**); `npm run build` PASS (regenerated gitignored `dist/`);
-  `npm audit --omit=dev` PASS (`found 0 vulnerabilities`); `npm audit` (read-only, no fixes)
-  reported **10 moderate** dev-only vulnerabilities (`minimatch` `GHSA-g3hv-75wg-m249`,
-  ESLint/typescript-eslint chain), 0 high/critical. Browser tests, benchmarks, Safari/WebKit,
-  OS-level network isolation, and peak-memory profiling were not re-run/verified in this task.
-- **Browsers:** prior recorded runs (Edge 156/18 checks, Chrome 156/18, Firefox 160/18) remain
-  historical evidence for the pre-correction worktree state where recorded; Safari/WebKit remain
-  unverified. Browser tests were not re-run in this resolution task.
-- **Benchmarks:** not re-run in this resolution task (benchmark command can overwrite ignored
-  artifacts). Prior recorded synthetic benchmarks remain historical; peak memory unmeasured;
-  limits provisional.
-- **Audit:** `npm audit --omit=dev` should report 0 vulnerabilities for runtime deps (zero runtime
-  deps). Full `npm audit` may report development-only `minimatch`/ESLint-chain findings
-  (`GHSA-g3hv-75wg-m249`, tracked/open); no unsafe fixes applied.
-- **Still pending:** final maintainer review and formal Phase 3 acceptance; Safari/WebKit
-  execution; peak-memory validation; recommendation-quality evaluation; published-package
-  verification. Do not claim Phase 4, release readiness, or publication.
+- **Locally verified in this task:** format, lint, typecheck, tests, build, and full `verify`
+  passed for the current working tree. Static review found no runtime clock/network/persistence/
+  telemetry capability introduced in `src/`.
+- **Not re-run/verified in this task:** real-browser matrix, `npm run bench`,
+  `npm run pack:check`, `npm audit --omit=dev`/full audit, Safari/WebKit, OS-level network
+  isolation, peak memory, and worst-case hard-limit performance.
+- **Known residual risk/limitation:** JavaScript proxy inspection is not a sandbox boundary;
+  hostile proxies may execute traps during inspection. JSON-compatible input remains the supported
+  boundary for untrusted data. Limits and performance results remain provisional where not backed
+  by recorded evidence. No CI run exists for this uncommitted working tree.
 
 ---
 

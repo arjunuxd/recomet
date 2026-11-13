@@ -6,9 +6,15 @@ import type { CollaborativeInteraction, RecommendationPreferences } from './pers
  *
  * Unknown keys are rejected. `preferences` is optional and used by content
  * and hybrid scoring. `interactions` and `userId` are optional and used by
- * collaborative and hybrid strategies; interaction records are processed for
- * this call and are not retained. No persistent account, learned profile, or
- * automatic interaction collection is accepted.
+ * collaborative, hybrid, trending, discovery, and popularity-related ranking;
+ * interaction records are processed for this call and are not retained.
+ *
+ * `now` is an optional injectable reference time (Unix epoch milliseconds, UTC)
+ * for deterministic time-dependent behavior (freshness, trending/discovery
+ * windows). Recomet does not read wall-clock time.
+ *
+ * No persistent account, learned profile, or automatic interaction collection
+ * is accepted.
  */
 export interface RecommendationRequest {
   readonly items: readonly ContentItem[];
@@ -19,4 +25,10 @@ export interface RecommendationRequest {
   readonly userId?: string;
   /** Interaction records explicitly supplied by the integrating application. */
   readonly interactions?: readonly CollaborativeInteraction[];
+  /**
+   * Injectable reference timestamp in Unix epoch milliseconds (UTC).
+   * Required for time-window features when configured; must be a finite
+   * non-negative safe integer when provided.
+   */
+  readonly now?: number;
 }

@@ -69,18 +69,21 @@ export interface Interaction {
 }
 
 /**
- * Phase 3 collaborative interaction input.
+ * Interaction input supplied explicitly by the integrating application.
  *
  * The integrating application controls event types and any `value` semantics.
  * Recomet validates records but does not assign universal meanings to
  * application-specific events. Records are processed only for the current call
  * and are not retained.
  *
- * Phase 3: `value`, when provided, must be a finite, non-negative number.
- * Negative values (dislike/negative-feedback semantics) are unsupported in
- * Phase 3 and are rejected during validation. If `value` is absent, Recomet
- * uses `interactionTypes[type]` when configured, otherwise the default strength
- * `1`.
+ * `value`, when provided, must be a finite, non-negative number. If absent,
+ * collaborative/trending logic may use configured type weights or a default of
+ * `1` according to the active strategy's documented rules.
+ *
+ * `timestamp`, when provided, must be a finite, non-negative safe integer
+ * representing Unix epoch milliseconds (UTC). It is used only for explicitly
+ * time-windowed, local computations (e.g. trending/discovery) when requested;
+ * deterministic behavior requires an injectable request `now`.
  */
 export interface CollaborativeInteraction {
   readonly userId: string;
@@ -89,4 +92,6 @@ export interface CollaborativeInteraction {
   readonly type: string;
   /** Optional finite, non-negative numeric value/rating supplied by the application. */
   readonly value?: number;
+  /** Optional Unix epoch milliseconds (UTC) for time-windowed local computations. */
+  readonly timestamp?: number;
 }

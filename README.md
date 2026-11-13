@@ -7,19 +7,21 @@ runs inside the integrating application, processes application-supplied data loc
 returns ranking results. It is a library — not a hosted service, central API, or
 data-collecting platform.
 
-> **Project status: Phase 2 and Phase 3 (collaborative-only) are accepted by the maintainer
-> (independent audits `APPROVE WITH CONDITIONS`; documented limitations remain visible). Phase 4
-> **hybrid recommendation** (explicit `hybrid` strategy, availability-aware fusion) is implemented
-> in this worktree (2026-11-07) and **pending maintainer review/formal acceptance**. Recomet is not
-> published to npm.**
+> **Project status: Phases 2–4 are accepted by the maintainer (independent audits
+> `APPROVE WITH CONDITIONS`; documented limitations remain visible; see phase-history acceptance
+> records). Phase 5 (advanced ranking & discovery) is implemented in this working tree and is
+> **pending maintainer review/formal acceptance**. Recomet is not published to npm.**
 >
 > Phase 2 delivers **explicit preference-based content relevance** from per-request preferences
 > and mapped content attributes. Phase 3 adds **neighborhood-based collaborative filtering**
 > (user-based and item-based) using interaction data explicitly supplied by the integrating
 > application for the current call. Phase 4 adds an explicit `hybrid` strategy that fuses available
 > content/collaborative signals without fabricating missing collaborative evidence; `auto` behavior is
-> preserved and does not auto-select hybrid. Hybrid personalization (`R23`) remains deferred. All
-> examples use synthetic data.
+> preserved and does not auto-select hybrid. Phase 5 adds explicit `trending`/`discovery` strategies
+> and configurable local ranking controls (popularity, freshness with injectable time, diversity
+> re-ranking, and trending windows) with deterministic, explainable, bounded behavior. Hybrid
+> personalization (`R23`) and automatic profile learning remain deferred. All examples use synthetic
+> data.
 
 ## Why Recomet
 
@@ -167,11 +169,13 @@ mappings/weights, and out-of-range limits throw `RecometError` during creation. 
 limits are documented in [ARCHITECTURE.md](./ARCHITECTURE.md#8-configuration-defaults-and-hard-caps).
 They remain **provisional** and are not performance guarantees.
 
-## Collaborative Filtering (Phase 3, implemented; final maintainer review pending)
+## Collaborative Filtering (Phase 3, accepted)
 
 Phase 3 processes interaction records **explicitly supplied in the request** and produces
 deterministic, explainable collaborative recommendations. Interactions are validated, used only
-for the current call, and not retained.
+for the current call, and not retained. Formal acceptance is recorded in
+[docs/development/phase-history/phase-3/PHASE3_ACCEPTANCE.md](./docs/development/phase-history/phase-3/PHASE3_ACCEPTANCE.md),
+subject to documented limitations.
 
 ```ts
 const recommender = createRecommender({
@@ -234,10 +238,15 @@ if neither signal is usable, it falls back truthfully to baseline. No silent ble
   strict interaction validation, deterministic ranking, explainable collaborative components,
   configurable method/similarity/interaction-type weights/minOverlap/maxNeighbors, and explicit
   cold-start/fallback behavior.
-- Phase 4 (implemented in working tree, pending acceptance): explicit `hybrid` strategy with
-  availability-aware weighted fusion, configurable bounded hybrid weights, safe hybrid
-  explanations/components, preserved exclusions/target-interacted behavior, and truthful fallback.
-  Hybrid reuses the existing request-scoped collaborative similarity-evaluation budget.
+- Phase 4 (accepted): explicit `hybrid` strategy with availability-aware weighted fusion,
+  configurable bounded hybrid weights, safe hybrid explanations/components, preserved
+  exclusions/target-interacted behavior, and truthful fallback. Hybrid reuses the existing
+  request-scoped collaborative similarity-evaluation budget.
+- Phase 5 (implemented in working tree, pending acceptance): explicit `trending` and `discovery`
+  strategies computed locally from supplied data with injectable `now`, explicit time-window
+  semantics, and cold-start/fallback handling; configurable ranking controls for popularity,
+  freshness, diversity re-ranking, and trending factors with bounded/deterministic/explainable
+  application. Advanced learned profiles and automatic interaction collection remain out of scope.
 - Collaborative limits: `maxInteractions`, `maxInteractionTypeLength`,
   `maxInteractionTypeWeights`, `maxCollaborativeNeighbors`,
   `maxCollaborativeSimilarityEvaluations` (maximum **total** `computeSimilarity` evaluations per
@@ -253,25 +262,30 @@ if neither signal is usable, it falls back truthfully to baseline. No silent ble
   mutable global state in the runtime core.
 
 Not implemented and not advertised as accepted/stable beyond documented scope: hybrid
-personalization (`R23`), content similarity/similar-item recommendations, automatic interaction
-collection/learning, persistent profiles, trending/popularity, freshness/time decay, diversity
-re-ranking, persistence adapters, plugins, and hosted services. Support-aware/confidence weighting
-for hybrid is deferred.
+personalization (`R23`), automatic/learned user profiles and automatic interaction
+collection/learning, content similarity/similar-item recommendations, hosted trend feeds/external
+data, persistence adapters, plugins, and hosted services. Support-aware/confidence weighting for
+hybrid is deferred. Advanced ranking/discovery controls implemented in Phase 5 are pending formal
+acceptance and remain subject to documented bounds/trade-offs.
 
 ## Testing and Verification
 
-The repository contains 224 automated Node tests across 13 files (current Phase 3 implementation
-verification snapshot in this worktree), including unit, integration, edge/failure,
-security/privacy, hostile-Proxy, static runtime-policy, collaborative functional/mathematical/
+The repository contains 303 automated Node tests across 15 files (current working-tree
+verification snapshot, including Phase 5 coverage), including unit, integration, edge/failure,
+security/privacy, hostile-Proxy, static runtime-policy, strategy-specific functional/mathematical/
 validation/security coverage, and regression coverage against naive/reference expectations. All
-use synthetic data. In this task, `npm test`, `npm run typecheck`, `npm run lint`,
-`npm run format:check`, `npm run build`, `npm run bench`, `npm run pack:check`, and
-`npm audit --omit=dev` were executed and passed on Node.js `v24.18.0` (Windows 11). Real-browser
-tests were not re-run in this task; historical 2026-11-05 results are recorded below. Historical
-Phase 1/2 snapshots are recorded in [SPECIFICATION.md](./SPECIFICATION.md) and
-[PHASE2_ACCEPTANCE.md](./docs/development/phase-history/phase-2/PHASE2_ACCEPTANCE.md). Phase 3
-and Phase 4 acceptance records are preserved in
+use synthetic data. In this task, `npm run verify` (`format:check`, `lint`, `typecheck`, `test`,
+`build`) passed locally. Real-browser tests, `npm run bench`, `npm run pack:check`, and
+`npm audit --omit=dev` were not re-run in this task. Historical 2026-11-05 browser results are
+recorded below. Historical phase snapshots and acceptance records are preserved in
+[SPECIFICATION.md](./SPECIFICATION.md) and
 [docs/development/phase-history/](./docs/development/phase-history/).
+
+Latest known GitHub Actions CI for commit `3168d19` (run
+[43381147821](https://github.com/arjunuxd/recomet/actions/runs/43381147821), before this Phase 5
+working-tree change set) completed with **Failure** (Windows Node 22/24 verification jobs failed);
+current uncommitted changes have not been validated by CI. Do not infer CI pass/fail for this
+working tree without new evidence.
 
 ```text
 npm run verify        # typecheck + lint + format check + tests + build

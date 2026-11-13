@@ -21,6 +21,16 @@ export const HYBRID_COLLABORATIVE_ONLY_SUMMARY =
   'Hybrid relevance using only available collaborative evidence; no explicit content preferences were available.';
 export const HYBRID_FALLBACK_BASELINE_SUMMARY =
   'Neutral baseline fallback: hybrid strategy was requested but no usable content or collaborative signals were available.';
+export const TRENDING_SUMMARY =
+  'Trending relevance computed locally from explicitly supplied interactions within an explicit time window using an injectable reference time; no external data was used.';
+export const TRENDING_FALLBACK_BASELINE_SUMMARY =
+  'Neutral baseline fallback: trending strategy was requested but insufficient local time-window interaction data was available.';
+export const DISCOVERY_SUMMARY =
+  'Discovery relevance computed locally from supplied data to surface trending and less-seen eligible items with explicit time-window and cold-start handling; no external data was used.';
+export const DISCOVERY_FALLBACK_TRENDING_SUMMARY =
+  'Discovery fallback: trending relevance was used because discovery-specific signals were limited in the supplied data.';
+export const DISCOVERY_FALLBACK_BASELINE_SUMMARY =
+  'Neutral baseline fallback: discovery strategy was requested but insufficient local data was available.';
 
 export interface RawScoreComponent {
   readonly factor: ScoreFactor;

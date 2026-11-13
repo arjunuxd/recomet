@@ -10,7 +10,7 @@ import {
 } from '../internal/safe-object.js';
 import type { ValidatedInteraction } from '../collaborative/model.js';
 
-const INTERACTION_KEYS = ['userId', 'itemId', 'type', 'value'] as const;
+const INTERACTION_KEYS = ['userId', 'itemId', 'type', 'value', 'timestamp'] as const;
 
 function isInteractionKey(key: string): key is (typeof INTERACTION_KEYS)[number] {
   return (INTERACTION_KEYS as readonly string[]).includes(key);
@@ -151,9 +151,9 @@ export function validateInteractions(
         }
         throw error;
       }
-      // Phase 3: explicit interaction values must be finite and non-negative.
-      // Negative values are rejected (no dislike-aware semantics in this phase).
-      // Signed zero (-0) is canonicalized to 0; this is not negative-input clamping.
+      // Explicit interaction values must be finite and non-negative.
+      // Negative values are rejected (no dislike-aware semantics in implemented
+      // phases). Signed zero (-0) is canonicalized to 0.
       if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
         throw invalidInteraction(
           index,
@@ -164,7 +164,32 @@ export function validateInteractions(
       numericValue = Object.is(value, -0) ? 0 : value;
     }
 
-    result.push(Object.freeze({ userId, itemId, type, value: numericValue }));
+    let timestamp: number | undefined;
+    if (keys.includes('timestamp')) {
+      let ts: unknown;
+      try {
+        ts = readDataProperty(raw, 'timestamp');
+      } catch (error) {
+        if (error instanceof UnsafeStructureError) {
+          throw invalidInteraction(
+            index,
+            `Interaction at index ${index} has an unsupported structure.`,
+            `interactions[${index}].timestamp`,
+          );
+        }
+        throw error;
+      }
+      if (typeof ts !== 'number' || !Number.isFinite(ts) || !Number.isSafeInteger(ts) || ts < 0) {
+        throw invalidInteraction(
+          index,
+          `Interaction at index ${index} has an invalid timestamp.`,
+          `interactions[${index}].timestamp`,
+        );
+      }
+      timestamp = ts;
+    }
+
+    result.push(Object.freeze({ userId, itemId, type, value: numericValue, timestamp }));
   }
 
   return result;

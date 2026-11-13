@@ -6,6 +6,7 @@ export interface ValidatedInteraction {
   readonly itemId: string;
   readonly type: string;
   readonly value: number | undefined;
+  readonly timestamp?: number | undefined;
 }
 
 export interface InteractionModel {

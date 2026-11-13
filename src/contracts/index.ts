@@ -13,7 +13,10 @@ export type { RecommendationRequest } from './request.js';
 export type { Recommender } from './recommender.js';
 export type {
   CollaborativeFactor,
+  DiversityFactor,
+  FreshnessFactor,
   HybridContentFactor,
+  PopularityFactor,
   Recommendation,
   RecommendationExplanation,
   RecommendationMetadata,
@@ -21,6 +24,7 @@ export type {
   ScoreComponent,
   ScoreFactor,
   StrategyId,
+  TrendingFactor,
 } from './result.js';
 export type {
   CollaborativeInteractionTypeWeights,
@@ -31,9 +35,14 @@ export type {
   ContentAttributeMap,
   ContentStrategyConfig,
   ContentWeights,
+  DiversityConfig,
   EngineLimits,
+  FreshnessConfig,
   HybridStrategyConfig,
   HybridStrategyWeights,
+  PopularityConfig,
+  RankingConfig,
   RecommenderConfig,
+  TrendingConfig,
 } from './config.js';
 export type { RecometErrorCategory, RecometErrorCode, RecometErrorDetails } from './errors.js';
