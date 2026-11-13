@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Test and coverage output
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+
+# Benchmark output
+# Intentionally preserved benchmark evidence in benchmarks/ (e.g. results.json,
+# browser-results.json, retained backups) must remain trackable. Ignore only
+# clearly generated temporary benchmark output if such files are introduced.
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*

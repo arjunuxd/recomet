@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>RECOMET_PENDING</title>
+  </head>
+  <body>
+    <pre id="result">pending</pre>
+    <script type="module">
+      import * as api from '/dist/index.js';
+      import { runBrowserSuite } from '/suite.js';
+
+      try {
+        const summary = runBrowserSuite(api, navigator.userAgent);
+        document.getElementById('result').textContent = JSON.stringify(summary, null, 2);
+        document.title = 'RECOMET_RESULT:' + encodeURIComponent(JSON.stringify(summary));
+      } catch (error) {
+        const summary = {
+          ok: false,
+          fatal: String((error && error.stack) || error),
+        };
+        document.getElementById('result').textContent = JSON.stringify(summary, null, 2);
+        document.title = 'RECOMET_RESULT:' + encodeURIComponent(JSON.stringify(summary));
+      }
+    </script>
+  </body>
+</html>

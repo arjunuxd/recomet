@@ -1,0 +1,7 @@
+dist/
+node_modules/
+coverage/
+package-lock.json
+*.md
+benchmarks/results.json
+benchmarks/browser-results.json
